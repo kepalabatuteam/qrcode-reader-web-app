@@ -165,7 +165,7 @@
             statusDiv.innerText = "✅ SUCCESS: Logged";
             statusDiv.classList.add('success-bg');
         }
-        setTimeout(() => location.reload(), 3000);
+        setTimeout(() => location.reload(), 700);
     }
 
     var html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
@@ -189,7 +189,7 @@
                 document.getElementById('torch-button').style.display = 'block';
             }
         }
-    }, 2000); // Wait for camera to initialize
+    }, 500); // Wait for camera to initialize
 </script>
 
 </body>
