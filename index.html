@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>QR Checkpoint Pro</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 { color: #1e293b; margin-top: 0; font-size: 1.5rem; }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px; /* Prevents iOS auto-zoom on focus */
+            appearance: none;
+            background: white;
+        }
+
+        #reader {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            border: none !important;
+        }
+
+        /* Styling the scanner's internal buttons */
+        #reader button {
+            background-color: var(--primary) !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 20px !important;
+            border-radius: 8px !important;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .success-bg { background-color: #dcfce7 !important; color: #166534 !important; }
+        .error-bg { background-color: #fee2e2 !important; color: #991b1b !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Checkpoint Scanner</h2>
+    
+    <div class="form-group">
+        <label for="location">Current Location</label>
+        <select id="location" onchange="saveLocation()">
+            <option value="CP1">📍 Checkpoint 1 (CP1)</option>
+            <option value="CP2">📍 Checkpoint 2 (CP2)</option>
+            <option value="CP3">📍 Checkpoint 3 (CP3)</option>
+            <option value="Finish">🏁 Finish Line</option>
+        </select>
+    </div>
+
+    <button id="torch-button" onclick="toggleTorch()" style="display:none; width:100%; margin-bottom:15px; padding:12px; background:#eab308; color:black; border:none; border-radius:10px; font-weight:bold;">
+        🔦 Turn Flashlight ON
+    </button>
+
+    <div id="reader"></div>
+    <div id="status">Ready to scan...</div>
+</div>
+
+<script>
+    const scriptURL = 'YOUR_GOOGLE_SCRIPT_WEB_APP_URL';
+    const locationSelect = document.getElementById('location');
+    let track = null; // To hold the camera track for the flashlight
+    let isTorchOn = false;
+
+    // Persist Location
+    window.onload = function() {
+        const savedLocation = localStorage.getItem('lastLocation');
+        if (savedLocation) locationSelect.value = savedLocation;
+    };
+
+    function saveLocation() {
+        localStorage.setItem('lastLocation', locationSelect.value);
+    }
+
+    // Flashlight Logic
+    function toggleTorch() {
+        if (!track) return;
+        isTorchOn = !isTorchOn;
+        track.applyConstraints({
+            advanced: [{ torch: isTorchOn }]
+        }).then(() => {
+            document.getElementById('torch-button').innerText = isTorchOn ? "🚫 Turn Flashlight OFF" : "🔦 Turn Flashlight ON";
+        }).catch(err => console.error("Flashlight not supported", err));
+    }
+
+    function onScanSuccess(decodedText) {
+        const selectedLocation = locationSelect.value;
+        const statusDiv = document.getElementById('status');
+        
+        saveLocation();
+        statusDiv.innerText = "⏳ Verifying scan...";
+        statusDiv.className = ""; 
+        
+        // Ensure torch is off before clearing
+        if(isTorchOn) toggleTorch();
+        html5QrcodeScanner.clear();
+
+        const script = document.createElement('script');
+        script.src = `${scriptURL}?qrContent=${encodeURIComponent(decodedText)}&location=${encodeURIComponent(selectedLocation)}&callback=handleResponse`;
+        document.body.appendChild(script);
+    }
+
+    function handleResponse(response) {
+        const statusDiv = document.getElementById('status');
+        if (response.status === "ALREADY_SCANNED") {
+            statusDiv.innerText = "🛑 DUPLICATE: Already Scanned";
+            statusDiv.classList.add('error-bg');
+            alert("This QR code was already recorded at this checkpoint!");
+        } else {
+            statusDiv.innerText = "✅ SUCCESS: Logged";
+            statusDiv.classList.add('success-bg');
+        }
+        setTimeout(() => location.reload(), 3000);
+    }
+
+    var html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+        fps: 10, 
+        qrbox: {width: 250, height: 250},
+        aspectRatio: 1.0 
+    });
+
+    // Render scanner and catch the video track for the torch
+    html5QrcodeScanner.render(onScanSuccess, (errorMessage) => {
+        // Optional: handle scan errors silently
+    });
+
+    // Logic to show/hide torch button based on browser capabilities
+    setTimeout(() => {
+        const videoElement = document.querySelector('#reader video');
+        if (videoElement && videoElement.srcObject) {
+            track = videoElement.srcObject.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            if (capabilities.torch) {
+                document.getElementById('torch-button').style.display = 'block';
+            }
+        }
+    }, 2000); // Wait for camera to initialize
+</script>
+
+</body>
+</html>
