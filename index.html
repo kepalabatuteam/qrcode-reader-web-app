@@ -88,109 +88,110 @@
         .error-bg { background-color: #fee2e2 !important; color: #991b1b !important; }
     </style>
 </head>
-<body>
+    <body>
+        <div class="container">
+        <h2>Fast-Scan Checkpoint</h2>
+        
+        <div class="form-group">
+            <label for="location">Current Location</label>
+            <select id="location" onchange="saveLocation()">
+                <option value="CP1">📍 Checkpoint 1 (CP1)</option>
+                <option value="CP2">📍 Checkpoint 2 (CP2)</option>
+                <option value="CP3">📍 Checkpoint 3 (CP3)</option>
+                <option value="Finish">🏁 Finish Line</option>
+            </select>
+        </div>
 
-<div class="container">
-    <h2>Checkpoint Scanner</h2>
-    
-    <div class="form-group">
-        <label for="location">Current Location</label>
-        <select id="location" onchange="saveLocation()">
-            <option value="CP1">📍 Checkpoint 1 (CP1)</option>
-            <option value="CP2">📍 Checkpoint 2 (CP2)</option>
-            <option value="CP3">📍 Checkpoint 3 (CP3)</option>
-            <option value="Finish">🏁 Finish Line</option>
-        </select>
+        <div id="reader"></div>
+        <div id="status">Ready to scan...</div>
+        
+        <div id="counter" style="margin-top:10px; font-size: 0.8rem; color: #64748b;">
+            Scans this session: <span id="scanCount">0</span>
+        </div>
     </div>
 
-    <button id="torch-button" onclick="toggleTorch()" style="display:none; width:100%; margin-bottom:15px; padding:12px; background:#eab308; color:black; border:none; border-radius:10px; font-weight:bold;">
-        🔦 Turn Flashlight ON
-    </button>
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbykzbNnK6bTAbZWKyqm5meLFGJWNL8dXzlcmCI5pbsHv_cTM1xtbkG6NrX9OH4wXhDp/exec';
+        const locationSelect = document.getElementById('location');
+        const statusDiv = document.getElementById('status');
+        const countDisplay = document.getElementById('scanCount');
+        let totalScans = 0;
 
-    <div id="reader"></div>
-    <div id="status">Ready to scan...</div>
-</div>
+        // Load saved location on startup
+        window.onload = () => {
+            const saved = localStorage.getItem('lastLocation');
+            if (saved) locationSelect.value = saved;
+        };
 
-<script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbykzbNnK6bTAbZWKyqm5meLFGJWNL8dXzlcmCI5pbsHv_cTM1xtbkG6NrX9OH4wXhDp/exec';
-    const locationSelect = document.getElementById('location');
-    let track = null; // To hold the camera track for the flashlight
-    let isTorchOn = false;
+        function saveLocation() {
+            localStorage.setItem('lastLocation', locationSelect.value);
+        }
 
-    // Persist Location
-    window.onload = function() {
-        const savedLocation = localStorage.getItem('lastLocation');
-        if (savedLocation) locationSelect.value = savedLocation;
-    };
+        // Initialize the scanner globally so we can control it easily
+        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+            fps: 20, // Increased FPS for faster detection
+            qrbox: {width: 250, height: 250},
+            aspectRatio: 1.0 
+        });
 
-    function saveLocation() {
-        localStorage.setItem('lastLocation', locationSelect.value);
-    }
+        function startScanner() {
+            html5QrcodeScanner.render(onScanSuccess);
+        }
 
-    // Flashlight Logic
-    function toggleTorch() {
-        if (!track) return;
-        isTorchOn = !isTorchOn;
-        track.applyConstraints({
-            advanced: [{ torch: isTorchOn }]
-        }).then(() => {
-            document.getElementById('torch-button').innerText = isTorchOn ? "🚫 Turn Flashlight OFF" : "🔦 Turn Flashlight ON";
-        }).catch(err => console.error("Flashlight not supported", err));
-    }
-
-    function onScanSuccess(decodedText) {
+function onScanSuccess(decodedText) {
         const selectedLocation = locationSelect.value;
         const statusDiv = document.getElementById('status');
         
-        saveLocation();
-        statusDiv.innerText = "⏳ Verifying scan...";
-        statusDiv.className = ""; 
+        // 1. Immediate Visual Freeze
+        statusDiv.innerText = "⏳ LOGGING...";
+        statusDiv.className = "status-processing"; // Add a neutral color while waiting
         
-        // Ensure torch is off before clearing
-        if(isTorchOn) toggleTorch();
+        // Stop scanner to prevent multiple triggers of the same code
         html5QrcodeScanner.clear();
 
+        // 2. Send data (JSONP)
         const script = document.createElement('script');
         script.src = `${scriptURL}?qrContent=${encodeURIComponent(decodedText)}&location=${encodeURIComponent(selectedLocation)}&callback=handleResponse`;
+        
+        // Error handling if the internet drops
+        script.onerror = () => {
+            statusDiv.innerText = "❌ CONNECTION ERROR";
+            statusDiv.classList.add('error-bg');
+            setTimeout(resetScanner, 2000);
+        };
+
         document.body.appendChild(script);
     }
 
-    function handleResponse(response) {
+function handleResponse(response) {
         const statusDiv = document.getElementById('status');
+        
+        // Remove the script tag to keep memory clean
+        const scripts = document.querySelectorAll('script[src*="callback=handleResponse"]');
+        scripts.forEach(s => s.remove());
+
         if (response.status === "ALREADY_SCANNED") {
-            statusDiv.innerText = "🛑 DUPLICATE: Already Scanned";
+            statusDiv.innerText = "🛑 DUPLICATE: REJECTED";
             statusDiv.classList.add('error-bg');
-            alert("This QR code was already recorded at this checkpoint!");
+            // Show red for slightly longer so the user notices the error
+            setTimeout(resetScanner, 2000); 
         } else {
-            statusDiv.innerText = "✅ SUCCESS: Logged";
+            statusDiv.innerText = "✅ SUCCESS: SAVED";
             statusDiv.classList.add('success-bg');
+            totalScans++;
+            countDisplay.innerText = totalScans;
+            // Success reset is very fast (800ms) to keep the line moving
+            setTimeout(resetScanner, 800);
         }
-        setTimeout(() => location.reload(), 700);
     }
-
-    var html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-        fps: 10, 
-        qrbox: {width: 250, height: 250},
-        aspectRatio: 1.0 
-    });
-
-    // Render scanner and catch the video track for the torch
-    html5QrcodeScanner.render(onScanSuccess, (errorMessage) => {
-        // Optional: handle scan errors silently
-    });
-
-    // Logic to show/hide torch button based on browser capabilities
-    setTimeout(() => {
-        const videoElement = document.querySelector('#reader video');
-        if (videoElement && videoElement.srcObject) {
-            track = videoElement.srcObject.getVideoTracks()[0];
-            const capabilities = track.getCapabilities();
-            if (capabilities.torch) {
-                document.getElementById('torch-button').style.display = 'block';
-            }
-        }
-    }, 500); // Wait for camera to initialize
-</script>
-
-</body>
+    
+function resetScanner() {
+        statusDiv.innerText = "Ready for next scan...";
+        statusDiv.className = "";
+        html5QrcodeScanner.render(onScanSuccess);
+    }
+        // Start the app
+        startScanner();
+    </script>
+    </body>
 </html>
