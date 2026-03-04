@@ -1,5 +1,5 @@
 let idleTimer;
-const IDLE_TIME = 30 * 60 * 1000; // 30 Minutes
+// const IDLE_TIME = 30 * 60 * 1000; // 30 Minutes
 
 async function hashPassword(string) {
     const utf8 = new TextEncoder().encode(string);
@@ -24,26 +24,31 @@ async function attemptLogin() {
     sendToGoogle({ action: 'login', username: user, passwordHash: hash });
 }
 
+window.onload = () => {
+    const savedUser = localStorage.getItem('isLoggedIn');
+    const savedFullName = localStorage.getItem('operatorFullName');
+    const savedLoc = localStorage.getItem('assignedLocation');
+
+    // If data exists in LocalStorage, skip login
+    if (savedUser === 'true' && savedFullName && savedLoc) {
+        showScanner(savedFullName, savedLoc);
+    }
+    resetIdleTimer();
+};
+
 function loginResponse(res) {
     const btn = document.getElementById('loginBtn');
-
+    
     if (res.status === "AUTH_SUCCESS") {
-        document.getElementById('loginPage').classList.add('hidden');
-        document.getElementById('scannerPage').classList.remove('hidden');
-
         const fullName = res.operatorFullName || "Unknown Operator";
         const assignedLoc = res.location || "Unknown Location";
 
-        // Store data
-        document.getElementById('operator').value = fullName;
-        document.getElementById('location').value = assignedLoc;
+        // SAVE TO LOCAL STORAGE (This survives the reload)
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('operatorFullName', fullName);
+        localStorage.setItem('assignedLocation', assignedLoc);
 
-        // Update UI
-        document.getElementById('displayLocation').innerText = "📍 " + assignedLoc;
-        document.getElementById('welcomeUser').innerText = "Logged in as: " + fullName; // New Line
-
-        startScanner();
-        resetIdleTimer();
+        showScanner(fullName, assignedLoc);
     } else {
         alert("Invalid Username or Password");
         btn.innerText = "Sign In";
@@ -52,13 +57,30 @@ function loginResponse(res) {
     }
 }
 
+function showScanner(fullName, location) {
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('scannerPage').classList.remove('hidden');
+    
+    document.getElementById('operator').value = fullName; 
+    document.getElementById('location').value = location;
+    
+    document.getElementById('displayLocation').innerText = "📍 " + location;
+    document.getElementById('welcomeUser').innerText = "Logged in as: " + fullName;
+    
+    startScanner();
+}
+
 function resetIdleTimer() {
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(logout, IDLE_TIME);
+    // Ensure logout happens if idle for 30 mins
+    idleTimer = setTimeout(() => {
+        alert("Session expired due to inactivity.");
+        logout(); 
+    }, 30 * 60 * 1000); 
 }
 
 function logout() {
-    sessionStorage.clear();
+    localStorage.clear();
     location.reload();
 }
 

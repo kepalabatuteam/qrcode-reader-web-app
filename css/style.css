@@ -9,13 +9,32 @@
 body { 
     font-family: -apple-system, system-ui, sans-serif; 
     background-color: var(--bg);
-    margin: 0; padding: 15px;
+    margin: 0; 
+    display: flex;           /* Enable Flexbox */
+    justify-content: center; /* Center horizontally */
+    align-items: center;     /* Center vertically */
+    min-height: 100vh;      /* Use full viewport height */
     color: var(--text);
+    padding: 20px;
+    box-sizing: border-box;
 }
 
-.container { width: 100%; max-width: 450px; margin: auto; }
-.card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-.hidden { display: none !important; }
+.container { 
+    width: 100%; 
+    max-width: 450px; 
+    /* Remove auto margins as Flexbox handles it now */
+}
+
+.card { 
+    background: white; 
+    padding: 25px; 
+    border-radius: 16px; 
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
+}
+
+.hidden { 
+    display: none !important; 
+}
 
 .form-group { margin-bottom: 15px; text-align: left; }
 label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.85rem; color: #64748b; }
