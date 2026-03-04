@@ -1,197 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>QR Checkpoint Pro</title>
+    <link rel="stylesheet" href="css/style.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        :root {
-            --primary: #2563eb;
-            --success: #22c55e;
-            --danger: #ef4444;
-            --bg: #f8fafc;
-        }
-
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background-color: var(--bg);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 450px;
-            background: white;
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        h2 { color: #1e293b; margin-top: 0; font-size: 1.5rem; }
-
-        .form-group {
-            text-align: left;
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #64748b;
-            font-size: 0.9rem;
-        }
-
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px; /* Prevents iOS auto-zoom on focus */
-            appearance: none;
-            background: white;
-        }
-
-        #reader {
-            width: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            border: none !important;
-        }
-
-        /* Styling the scanner's internal buttons */
-        #reader button {
-            background-color: var(--primary) !important;
-            color: white !important;
-            border: none !important;
-            padding: 10px 20px !important;
-            border-radius: 8px !important;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        #status {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .success-bg { background-color: #dcfce7 !important; color: #166534 !important; }
-        .error-bg { background-color: #fee2e2 !important; color: #991b1b !important; }
-    </style>
 </head>
-    <body>
-        <div class="container">
-        <h2>Fast-Scan Checkpoint</h2>
-        
-        <div class="form-group">
-            <label for="location">Current Location</label>
-            <select id="location" onchange="saveLocation()">
-                <option value="CP1">📍 Checkpoint 1 (CP1)</option>
-                <option value="CP2">📍 Checkpoint 2 (CP2)</option>
-                <option value="CP3">📍 Checkpoint 3 (CP3)</option>
-                <option value="Finish">🏁 Finish Line</option>
-            </select>
-        </div>
 
-        <div id="reader"></div>
-        <div id="status">Ready to scan...</div>
-        
-        <div id="counter" style="margin-top:10px; font-size: 0.8rem; color: #64748b;">
-            Scans this session: <span id="scanCount">0</span>
+<body>
+    <div id="loginPage" class="container">
+        <div class="card">
+            <h2>Operator Sign-In</h2>
+            <form id="loginForm" onsubmit="event.preventDefault(); attemptLogin();">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="userField" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="passField" placeholder="Enter password" required>
+                </div>
+                <button type="submit" id="loginBtn" class="btn-primary">Sign In</button>
+            </form>
         </div>
     </div>
 
-    <script>
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbykzbNnK6bTAbZWKyqm5meLFGJWNL8dXzlcmCI5pbsHv_cTM1xtbkG6NrX9OH4wXhDp/exec';
-        const locationSelect = document.getElementById('location');
-        const statusDiv = document.getElementById('status');
-        const countDisplay = document.getElementById('scanCount');
-        let totalScans = 0;
+    <div id="scannerPage" class="container hidden">
+        <div class="card">
+            <div class="header-row">
+                <div>
+                    <h2 id="displayLocation" style="margin-bottom: 5px;">Checkpoint</h2>
+                    <p id="welcomeUser" style="margin: 0; font-size: 0.9rem; color: #64748b;">Welcome, Operator</p>
+                </div>
+                <button onclick="logout()" class="btn-outline">Logout</button>
+            </div>
 
-        // Load saved location on startup
-        window.onload = () => {
-            const saved = localStorage.getItem('lastLocation');
-            if (saved) locationSelect.value = saved;
-        };
+            <input type="hidden" id="operator">
+            <input type="hidden" id="location">
 
-        function saveLocation() {
-            localStorage.setItem('lastLocation', locationSelect.value);
-        }
+            <div id="reader"></div>
+            <div id="status">Ready to scan...</div>
 
-        // Initialize the scanner globally so we can control it easily
-        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-            fps: 20, // Increased FPS for faster detection
-            qrbox: {width: 250, height: 250},
-            aspectRatio: 1.0 
-        });
+            <div class="stats">
+                Scans this session: <span id="scanCount">0</span>
+            </div>
 
-        function startScanner() {
-            html5QrcodeScanner.render(onScanSuccess);
-        }
+            <div id="historyLog" style="margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                <label>Recent Scans</label>
+                <ul id="scanList" style="list-style: none; padding: 0; font-size: 0.8rem; color: #475569;">
+                    <li style="padding: 5px 0; border-bottom: 1px solid #f1f5f9;">No scans yet this session.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
-function onScanSuccess(decodedText) {
-        const selectedLocation = locationSelect.value;
-        const statusDiv = document.getElementById('status');
-        
-        // 1. Immediate Visual Freeze
-        statusDiv.innerText = "⏳ LOGGING...";
-        statusDiv.className = "status-processing"; // Add a neutral color while waiting
-        
-        // Stop scanner to prevent multiple triggers of the same code
-        html5QrcodeScanner.clear();
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/scanner.js"></script>
+</body>
 
-        // 2. Send data (JSONP)
-        const script = document.createElement('script');
-        script.src = `${scriptURL}?qrContent=${encodeURIComponent(decodedText)}&location=${encodeURIComponent(selectedLocation)}&callback=handleResponse`;
-        
-        // Error handling if the internet drops
-        script.onerror = () => {
-            statusDiv.innerText = "❌ CONNECTION ERROR";
-            statusDiv.classList.add('error-bg');
-            setTimeout(resetScanner, 2000);
-        };
-
-        document.body.appendChild(script);
-    }
-
-function handleResponse(response) {
-        const statusDiv = document.getElementById('status');
-        
-        // Remove the script tag to keep memory clean
-        const scripts = document.querySelectorAll('script[src*="callback=handleResponse"]');
-        scripts.forEach(s => s.remove());
-
-        if (response.status === "ALREADY_SCANNED") {
-            statusDiv.innerText = "🛑 DUPLICATE: REJECTED";
-            statusDiv.classList.add('error-bg');
-            // Show red for slightly longer so the user notices the error
-            setTimeout(resetScanner, 2000); 
-        } else {
-            statusDiv.innerText = "✅ SUCCESS: SAVED";
-            statusDiv.classList.add('success-bg');
-            totalScans++;
-            countDisplay.innerText = totalScans;
-            // Success reset is very fast (800ms) to keep the line moving
-            setTimeout(resetScanner, 800);
-        }
-    }
-    
-function resetScanner() {
-        statusDiv.innerText = "Ready for next scan...";
-        statusDiv.className = "";
-        html5QrcodeScanner.render(onScanSuccess);
-    }
-        // Start the app
-        startScanner();
-    </script>
-    </body>
 </html>

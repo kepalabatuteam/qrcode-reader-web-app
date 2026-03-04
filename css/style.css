@@ -1,0 +1,51 @@
+:root {
+    --primary: #2563eb;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --text: #1e293b;
+    --bg: #f8fafc;
+}
+
+body { 
+    font-family: -apple-system, system-ui, sans-serif; 
+    background-color: var(--bg);
+    margin: 0; padding: 15px;
+    color: var(--text);
+}
+
+.container { width: 100%; max-width: 450px; margin: auto; }
+.card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.hidden { display: none !important; }
+
+.form-group { margin-bottom: 15px; text-align: left; }
+label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.85rem; color: #64748b; }
+
+input {
+    width: 100%; padding: 12px; border: 2px solid #e2e8f0;
+    border-radius: 10px; font-size: 16px; box-sizing: border-box;
+}
+
+.btn-primary { 
+    width: 100%; background: var(--primary); color: white; 
+    border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 1rem;
+}
+
+.btn-primary:disabled {
+    cursor: not-allowed;
+    background-color: #94a3b8;
+}
+
+.btn-outline {
+    background: transparent; border: 1px solid #cbd5e1;
+    padding: 5px 10px; border-radius: 6px; font-size: 0.8rem;
+}
+
+#reader { border-radius: 12px; overflow: hidden; margin-top: 10px; }
+#status { 
+    margin-top: 15px; padding: 15px; border-radius: 10px; 
+    text-align: center; font-weight: bold; background: #f1f5f9;
+}
+
+.success-bg { background-color: #dcfce7 !important; color: #166534 !important; }
+.error-bg { background-color: #fee2e2 !important; color: #991b1b !important; }
+.header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
