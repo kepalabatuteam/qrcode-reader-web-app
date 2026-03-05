@@ -211,21 +211,27 @@ button { cursor: pointer; font-family: inherit; }
 
 #historyLog label {
     display: block;
-    margin-bottom: 10px;
-    font-size: 0.8rem;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 700;
     color: var(--text-sub);
 }
 
+#scanList {
+    margin: 0;
+    padding: 0;
+    list-style: none; /* Removes bullets */
+}
+
 #scanList li {
-    background-color: var(--bg-card);
     padding: 12px 0;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    color: var(--text-main);
     animation: fadeIn 0.4s ease forwards;
 }
 
@@ -238,8 +244,11 @@ button { cursor: pointer; font-family: inherit; }
 #scanList li span {
     color: var(--primary);
     font-weight: 700;
-    font-family: monospace; /* Keep numbers aligned */
+    font-family: monospace;
     margin-right: 12px;
+    background: rgba(37, 99, 235, 0.1); /* Subtle background highlight */
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 /* Style the "No scans yet" state */

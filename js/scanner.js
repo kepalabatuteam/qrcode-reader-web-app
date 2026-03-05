@@ -89,22 +89,26 @@ function handleResponse(res) {
 
 function updateHistoryUI() {
     const scanList = document.getElementById('scanList');
-    if (totalScans === 1) scanList.innerHTML = ''; // Clear "No scans yet" text
-
+    
+    // 1. If this is the first scan of the session, clear the "No scans yet" message
+    if (totalScans === 1) {
+        scanList.innerHTML = ''; 
+    }
+    
     const now = new Date();
-    const timeStr = now.getHours().toString().padStart(2, '0') + ":" +
-        now.getMinutes().toString().padStart(2, '0') + ":" +
-        now.getSeconds().toString().padStart(2, '0');
-
-    const newItem = `<li style="padding: 8px 0; border-bottom: 1px solid #f1f5f9; animation: fadeIn 0.5s;">
-                        <span style="color: #2563eb; font-weight: bold;">${timeStr}</span> - Scan Recorded
-                     </li>`;
-
+    const timeStr = now.getHours().toString().padStart(2, '0') + ":" + 
+                    now.getMinutes().toString().padStart(2, '0') + ":" + 
+                    now.getSeconds().toString().padStart(2, '0');
+    
+    // 2. Create the new list item with the span for the CSS color highlight
+    const newItem = `<li><span>${timeStr}</span> Scan Recorded Successfully</li>`;
+    
+    // 3. Add the new scan to the top of the list
     scanList.insertAdjacentHTML('afterbegin', newItem);
-
-    // Keep only the last 3 entries to keep UI clean
-    if (scanList.children.length > 3) {
-        scanList.lastElementChild.remove();
+    
+    // 4. LIMIT FEATURE: If there are more than 5 logs, remove the oldest one (the last child)
+    while (scanList.children.length > 5) {
+        scanList.removeChild(scanList.lastElementChild);
     }
 }
 
