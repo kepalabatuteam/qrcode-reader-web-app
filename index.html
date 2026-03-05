@@ -13,6 +13,7 @@
     <div id="loginPage" class="container">
         <div class="card">
             <h2>QR Code Reader</h2>
+            <!-- <p>Kepala Batu Trail Race 3.0</p> -->
             <form id="loginForm" onsubmit="event.preventDefault(); attemptLogin();">
                 <div class="form-group">
                     <label>Username</label>
@@ -24,6 +25,9 @@
                 </div>
                 <button type="submit" id="loginBtn" class="btn-primary">Sign In</button>
             </form>
+            <footer class="app-footer">
+                Kepala Batu Team &copy; 2026
+            </footer>
         </div>
     </div>
 
@@ -32,27 +36,38 @@
             <div class="header-row">
                 <div>
                     <h2 id="displayLocation" style="margin-bottom: 5px;">Checkpoint</h2>
-                    <p id="welcomeUser" style="margin: 0; font-size: 0.9rem; color: #64748b;">Welcome, Operator</p>
+                    <p id="welcomeUser">Welcome, Operator</p>
                 </div>
                 <button onclick="logout()" class="btn-outline">Logout</button>
             </div>
 
             <input type="hidden" id="operator">
-            <input type="hidden" id="location">
+
+            <div class="form-group" id="locationContainer">
+                <label>Active Location</label>
+                <select id="location" onchange="updateLocationDisplay()">
+                </select>
+            </div>
 
             <div id="reader"></div>
+
             <div id="status">Ready to scan...</div>
 
             <div class="stats">
-                Scans this session: <span id="scanCount">0</span>
+                <span>Scans this session</span>
+                <span id="scanCount">0</span>
             </div>
 
-            <div id="historyLog" style="margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+            <div id="historyLog">
                 <label>Recent Scans</label>
-                <ul id="scanList" style="list-style: none; padding: 0; font-size: 0.8rem; color: #475569;">
-                    <li style="padding: 5px 0; border-bottom: 1px solid #f1f5f9;">No scans yet this session.</li>
+                <ul id="scanList">
+                    <li>No scans yet this session.</li>
                 </ul>
             </div>
+
+            <footer class="app-footer">
+                Kepala Batu Team &copy; 2026
+            </footer>
         </div>
     </div>
 
