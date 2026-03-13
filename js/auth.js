@@ -1,123 +1,108 @@
-let idleTimer;
-
-async function hashPassword(string) {
-    const utf8 = new TextEncoder().encode(string);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function attemptLogin() {
+/**
+ * Attempts login by sending credentials to Google Sheets
+ */
+function attemptLogin() {
     const user = document.getElementById('userField').value;
     const pass = document.getElementById('passField').value;
     const btn = document.getElementById('loginBtn');
 
-    if (!user || !pass) return alert("Please fill all fields");
-
-    btn.innerText = "⏳ Verifying...";
     btn.disabled = true;
-    btn.style.opacity = "0.7";
+    btn.innerText = "Authenticating...";
 
-    const hash = await hashPassword(pass);
-    sendToGoogle({ action: 'login', username: user, passwordHash: hash });
-}
+    const loginData = {
+        action: 'login',
+        username: user,
+        password: pass
+    };
 
-// Helper to reset button if login fails
-function resetLoginButton() {
-    const btn = document.getElementById('loginBtn');
-    btn.innerText = "Sign In";
-    btn.disabled = false;
-    btn.style.opacity = "1";
-}
-
-window.onload = () => {
-    const savedUser = localStorage.getItem('isLoggedIn');
-    const savedFullName = localStorage.getItem('operatorFullName');
-    const savedLocs = JSON.parse(localStorage.getItem('assignedLocations'));
-    const lastActive = localStorage.getItem('currentActiveLocation');
-
-    if (savedUser === 'true' && savedFullName && savedLocs) {
-        setupScannerUI(savedFullName, savedLocs, lastActive);
+    // Send to Google (Response handled by handleResponse in scanner.js)
+    if (typeof sendToGoogle === "function") {
+        sendToGoogle(loginData);
     }
-    resetIdleTimer(); // Start timer on load
-};
+}
 
+/**
+ * Specifically handles the result of a login attempt
+ * Called by handleResponse in scanner.js
+ */
 function loginResponse(res) {
+    const btn = document.getElementById('loginBtn');
+    
     if (res.status === "AUTH_SUCCESS") {
-        const fullName = res.operatorFullName;
-        const locations = res.locations; 
-
+        // Save session locally
         localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('operatorFullName', fullName);
-        localStorage.setItem('assignedLocations', JSON.stringify(locations));
-
-        setupScannerUI(fullName, locations);
+        localStorage.setItem('operatorName', res.operatorName);
+        
+        // Populate the app
+        document.getElementById('operator').value = res.operatorName;
+        document.getElementById('welcomeUser').innerText = `Logged in as: ${res.operatorName}`;
+        
+        // Load locations into select dropdown
+        populateLocations(res.locations);
+        
+        // Switch views
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('scannerPage').classList.remove('hidden');
+        
+        // Start camera
+        if (typeof startScanner === "function") {
+            startScanner();
+        }
     } else {
-        alert("Invalid Login Credentials");
-        resetLoginButton();
+        alert("Login Failed: " + (res.message || "Invalid credentials"));
+        btn.disabled = false;
+        btn.innerText = "Sign In";
     }
 }
 
-function setupScannerUI(fullName, locations, savedLoc = null) {
-    document.getElementById('loginPage').classList.add('hidden');
-    document.getElementById('scannerPage').classList.remove('hidden');
+/**
+ * Populates the dropdown and sets the default location
+ */
+function populateLocations(locations) {
+    const select = document.getElementById('location');
+    select.innerHTML = ''; // Clear existing
     
-    document.getElementById('operator').value = fullName;
-    document.getElementById('welcomeUser').innerText = "Logged in as: " + fullName;
-
-    const locSelect = document.getElementById('location');
-    const locContainer = document.getElementById('locationContainer');
-    locSelect.innerHTML = ''; 
-
     locations.forEach(loc => {
         const opt = document.createElement('option');
         opt.value = loc;
-        opt.innerText = "📍 " + loc;
-        locSelect.appendChild(opt);
+        opt.textContent = `📍 ${loc}`;
+        select.appendChild(opt);
     });
 
-    // LOGIC FIX: Hide the container entirely if only 1 location exists
-    if (locations.length <= 1) {
-        locSelect.value = locations[0];
-        locContainer.classList.add('hidden'); // This hides the label and the box
-    } else {
-        locContainer.classList.remove('hidden');
-        locSelect.disabled = false;
-        if (savedLoc && locations.includes(savedLoc)) {
-            locSelect.value = savedLoc;
-        }
-    }
-
-    // Wrap in a small timeout to ensure DOM is ready
-    setTimeout(() => {
-        updateLocationDisplay();
-        if (typeof startScanner === "function") startScanner();
-    }, 50);
+    updateLocationDisplay();
 }
 
+/**
+ * Updates the H2 header when location changes
+ */
 function updateLocationDisplay() {
-    const locSelect = document.getElementById('location');
-    const display = document.getElementById('displayLocation');
-    
-    if (locSelect && locSelect.value) {
-        display.innerText = locSelect.value;
-        localStorage.setItem('currentActiveLocation', locSelect.value);
+    const select = document.getElementById('location');
+    const header = document.getElementById('displayLocation');
+    if (select.value) {
+        header.innerText = select.value;
     }
 }
 
-function resetIdleTimer() {
-    clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => {
-        alert("Session expired due to inactivity.");
-        logout(); 
-    }, 30 * 60 * 1000); 
-}
-
+/**
+ * Clears local storage and reloads the page
+ */
 function logout() {
-    localStorage.clear();
-    location.reload();
+    if (confirm("Are you sure you want to logout? Any unsynced scans may be lost.")) {
+        localStorage.clear();
+        location.reload();
+    }
 }
 
-['mousedown', 'touchstart', 'keypress'].forEach(evt =>
-    document.addEventListener(evt, resetIdleTimer, true)
-);
+// Auto-check session on page load
+window.onload = () => {
+    if (localStorage.getItem('isLoggedIn') === 'true') {
+        // You would typically re-verify with the server here, 
+        // but for speed, we can restore the UI state.
+        const savedName = localStorage.getItem('operatorName');
+        document.getElementById('operator').value = savedName;
+        document.getElementById('welcomeUser').innerText = `Logged in as: ${savedName}`;
+        
+        // Note: You may need a 'refresh' action to get the location list again
+        // Or store the locations list in localStorage as well.
+    }
+};
