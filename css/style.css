@@ -259,3 +259,52 @@ button { cursor: pointer; font-family: inherit; }
     justify-content: center; /* Center the empty state text */
     padding: 20px 0;
 }
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: var(--bg-page);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-top: 20px;
+}
+
+.sync-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+/* Status: Synced (Green) */
+.sync-synced {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+/* Status: Queueing/Syncing (Orange) */
+.sync-pending {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+#syncIcon {
+    font-size: 1.2rem;
+}
+
+/* Optional pulse animation for pending sync */
+.sync-pending #syncIcon {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
