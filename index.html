@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 
@@ -81,4 +82,89 @@
     <script src="js/scanner.js"></script>
 </body>
 
+=======
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>QR Checkpoint Pro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+
+<body>
+    <div id="loginPage" class="container">
+        <div class="card">
+            <h2>QR Code Reader</h2>
+            <!-- <p>Kepala Batu Trail Race 3.0</p> -->
+            <form id="loginForm" onsubmit="event.preventDefault(); attemptLogin();">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="userField" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="passField" placeholder="Enter password" required>
+                </div>
+                <button type="submit" id="loginBtn" class="btn-primary">Sign In</button>
+            </form>
+            <footer class="app-footer">
+                Kepala Batu Team &copy; 2026
+            </footer>
+        </div>
+    </div>
+
+    <div id="scannerPage" class="container hidden">
+        <div class="card">
+            <div class="header-row">
+                <div>
+                    <h2 id="displayLocation" style="margin-bottom: 5px;">Checkpoint</h2>
+                    <p id="welcomeUser">Welcome, Operator</p>
+                </div>
+                <button onclick="logout()" class="btn-outline">Logout</button>
+            </div>
+
+            <input type="hidden" id="operator">
+
+            <div class="form-group" id="locationContainer">
+                <label>Active Location</label>
+                <select id="location" onchange="updateLocationDisplay()">
+                </select>
+            </div>
+
+            <div id="reader"></div>
+
+            <div id="status">Ready to scan...</div>
+
+            <div class="stats">
+                <div class="stats-info">
+                    <span>Scans this session: <span id="scanCount">0</span></span>
+                </div>
+                <div id="syncStatus" class="sync-indicator">
+                    <span id="syncIcon">●</span>
+                    <span id="syncText">Fully Synced</span>
+                </div>
+            </div>
+
+            <!-- <div id="historyLog">
+                <label>Recent Scans</label>
+                <ul id="scanList">
+                    <li>No scans yet this session.</li>
+                </ul>
+            </div> -->
+
+            <footer class="app-footer">
+                2026 &copy; Kepala Batu Team
+            </footer>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/scanner.js"></script>
+</body>
+
+>>>>>>> e502289e577670c0598900497e64ee08682d1c1c
 </html>
